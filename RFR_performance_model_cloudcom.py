@@ -8,11 +8,40 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.model_selection import train_test_split
 
 
-def get_N_samplesr(choice, structured_data):
+def get_N_samplesr_random(choice, structured_data):
+    N1_variants = [12, 37, 47, 14, 27, 38, 3, 39, 7, 42, 44, 51, 33, 18, 48, 5, 24]
+    N2_variants = [20, 35, 29, 6, 41, 54, 17, 43, 1, 45, 32, 53, 10, 50, 55, 49]
+    N3_variants = [46, 16, 11, 52, 36, 2, 13, 28, 31, 15, 8, 56, 25, 21, 23]
+    N4_variants = [22, 26, 30, 4, 8, 34, 9, 19]  # this should be prediction set (test)
+    if choice == 'N1':
+        N1 = structured_data[structured_data.variant.isin(N1_variants + N4_variants)]
+        X = N1.iloc[:, 1:15]
+        y = N1.iloc[:, -1]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.6)
+
+    elif choice == 'N2':
+        N2 = structured_data[structured_data.variant.isin(N1_variants + N2_variants + N4_variants)]
+        X = N2.iloc[:, 1:15]
+        y = N2.iloc[:, -1]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.75)
+
+    elif choice == 'N3':
+        N3 = structured_data[structured_data.variant.isin(N1_variants + N2_variants + N3_variants + N4_variants)]
+        X = N3.iloc[:, 1:15]
+        y = N3.iloc[:, -1]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.6)
+
+    N4 = structured_data[structured_data.variant.isin(N4_variants)]
+    N4_X = N4.iloc[:, 1:15]
+    N4_y = N4.iloc[:, -1]
+
+    return X_train, y_train, N4_X, N4_y
+
+def get_N_samplesr_twise(choice, structured_data):
     N1_variants = [1, 41, 42, 44, 8, 11, 20, 39, 46, 33, 24, 31, 50, 38, 12, 17, 2]
     N2_variants = [6, 54, 36, 55, 48, 14, 25, 16, 56, 32, 35, 52, 45, 13, 18, 51]
     N3_variants = [3, 5, 7, 10, 15, 21, 23, 27, 28, 29, 37, 43, 47, 49, 53]
-    N4_variants = [4, 8, 22, 30, 34]
+    N4_variants = [22, 26, 30, 4, 8, 34, 9, 19]  # this should be prediction set (test)
     if choice == 'N1':
         N1 = structured_data[structured_data.variant.isin(N1_variants + N4_variants)]
         X = N1.iloc[:, 1:15]
@@ -56,7 +85,7 @@ def remove_duplicates(data):
 
 # Baseline Model
 def base_RFR(structured_data):
-    X_train, y_train, N4_X, N4_y = get_N_samplesr('N1', structured_data)
+    X_train, y_train, N4_X, N4_y = get_N_samplesr_twise('N1', structured_data)
     base_RFR = RandomForestRegressor()
     base_RFR.fit(X_train, y_train)
     y_pred = base_RFR.predict(N4_X)
@@ -84,7 +113,7 @@ def perfrom_RFR_GridSearch(structured_data, trees, sizes):
         mse = []
         mae = []
         rmse = []
-        X_train, y_train, N4_X, N4_y = get_N_samplesr(size, structured_data)
+        X_train, y_train, N4_X, N4_y = get_N_samplesr_twise(size, structured_data)
 
         for x in trees:
             for d in range(1, 15):
@@ -117,7 +146,7 @@ def perfrom_RFR_GridSearch(structured_data, trees, sizes):
 
 
 def get_tree(best_train_size, structured_data, best_mx_feat):
-    X_train, y_train, X_test, y_test = get_N_samplesr(best_train_size, structured_data)
+    X_train, y_train, X_test, y_test = get_N_samplesr_twise(best_train_size, structured_data)
     n_trees = [100, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
     tree_df = pd.DataFrame()
     tree_df['y'] = y_test.to_list()
