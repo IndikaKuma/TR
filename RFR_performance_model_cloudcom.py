@@ -40,7 +40,7 @@ def get_N_samplesr_random(choice, structured_data):
 def get_N_samplesr_twise(choice, structured_data):
     N1_variants = [1, 41, 42, 44, 8, 11, 20, 39, 46, 33, 24, 31, 50, 38, 12, 17, 2]
     N2_variants = [6, 54, 36, 55, 48, 14, 25, 16, 56, 32, 35, 52, 45, 13, 18, 51]
-    # N3_variants = [3, 5, 7, 10, 15, 21, 23, 27, 28, 29, 37, 43, 47, 49, 53]
+    N3_variants = [3, 5, 7, 10, 15, 21, 23, 27, 28, 29, 37, 43, 47, 49, 53]
     N4_variants = [22, 26, 30, 4, 8, 34, 9, 19]  # this should be prediction set (test)
     if choice == 'N1':
         N1 = structured_data[structured_data.variant.isin(N1_variants + N4_variants)]
@@ -54,11 +54,11 @@ def get_N_samplesr_twise(choice, structured_data):
         y = N2.iloc[:, -1]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.75)
 
-    # elif choice == 'N3':
-    #     N3 = structured_data[structured_data.variant.isin(N1_variants + N2_variants + N3_variants + N4_variants)]
-    #     X = N3.iloc[:, 1:15]
-    #     y = N3.iloc[:, -1]
-    #     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.6)
+    elif choice == 'N3':
+        N3 = structured_data[structured_data.variant.isin(N1_variants + N2_variants + N3_variants + N4_variants)]
+        X = N3.iloc[:, 1:15]
+        y = N3.iloc[:, -1]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.6)
 
     N4 = structured_data[structured_data.variant.isin(N4_variants)]
     N4_X = N4.iloc[:, 1:15]
