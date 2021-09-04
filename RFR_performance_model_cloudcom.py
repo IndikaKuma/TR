@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, mean_absolute_percentage_error
 from sklearn.model_selection import train_test_split
 
 
@@ -39,9 +39,10 @@ def get_N_samplesr_random(choice, structured_data):
 
 def get_N_samplesr_twise(choice, structured_data):
     N1_variants = [1, 41, 42, 44, 8, 11, 20, 39, 46, 33, 24, 31, 50, 38, 12, 17, 2]
-    N2_variants = [6, 54, 36, 55, 48, 14, 25, 16, 56, 32, 35, 52, 45, 13, 18, 51]
-    N3_variants = [3, 5, 7, 10, 15, 21, 23, 27, 28, 29, 37, 43, 47, 49, 53]
-    N4_variants = [22, 26, 30, 4, 8, 34, 9, 19]  # this should be prediction set (test)
+    N1_1variants = [1, 41, 42, 44, 8, 11, 20, 39, 46, 33, 24, 31, 50, 38]
+    N2_variants = [6, 54, 36, 55, 48, 14, 25, 16, 56, 32, 35, 52, 45, 12]
+    N3_variants = [3, 5, 7, 10, 15, 21, 23, 27, 28, 29, 37, 43, 47, 17]
+    N4_variants = [22, 26, 30, 4, 8, 34, 9, 19, 13, 18, 51, 49, 53, 2]  # this should be prediction set (test)
     if choice == 'N1':
         N1 = structured_data[structured_data.variant.isin(N1_variants + N4_variants)]
         X = N1.iloc[:, 1:15]
@@ -49,13 +50,13 @@ def get_N_samplesr_twise(choice, structured_data):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.6)
 
     elif choice == 'N2':
-        N2 = structured_data[structured_data.variant.isin(N1_variants + N2_variants + N4_variants)]
+        N2 = structured_data[structured_data.variant.isin(N1_1variants + N2_variants + N4_variants)]
         X = N2.iloc[:, 1:15]
         y = N2.iloc[:, -1]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.75)
 
     elif choice == 'N3':
-        N3 = structured_data[structured_data.variant.isin(N1_variants + N2_variants + N3_variants + N4_variants)]
+        N3 = structured_data[structured_data.variant.isin(N1_1variants + N2_variants + N3_variants + N4_variants)]
         X = N3.iloc[:, 1:15]
         y = N3.iloc[:, -1]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.6)
@@ -91,6 +92,7 @@ def base_RFR(structured_data):
     y_pred = base_RFR.predict(N4_X)
     r2 = r2_score(N4_y, y_pred)
     print('R-Square: ', r2)
+    print('MAPE: ', mean_absolute_percentage_error(N4_y, y_pred))
     print('MSE: ', mean_squared_error(N4_y, y_pred))
     print('MAE: ', mean_absolute_error(N4_y, y_pred))
     print('RMSE', mean_squared_error(N4_y, y_pred, squared=False))
@@ -124,7 +126,7 @@ def perfrom_RFR_GridSearch(structured_data, trees, sizes):
                 n_trees.append(x)
                 mx_feat.append(d)
                 r2_sc.append(r2)
-                mse.append(round(mean_squared_error(N4_y, y_pred), 2))
+                mse.append(round(mean_absolute_percentage_error(N4_y, y_pred), 2))
                 mae.append(round(mean_absolute_error(N4_y, y_pred), 2))
                 rmse.append(round(mean_squared_error(N4_y, y_pred, squared=False), 2))
 
@@ -180,7 +182,6 @@ def run():
     size_score = perfrom_RFR_GridSearch(structured_data, trees, sizes)
 
     print(size_score)
-
     best = size_score.iloc[size_score['R-Sqaured'].idxmax()]
     # bes_n_est = int(best[2])
     best_mx_feat = int(best[3])
@@ -189,18 +190,19 @@ def run():
     tree_df, tree_score = get_tree(best_train_size, structured_data, best_mx_feat)
     bst_tree = tree_score.iloc[tree_score['R-Sqaured'].idxmax()]
 
-    plt.figure(figsize=(10, 6))
-    ax1 = sns.distplot(tree_df['y'], hist=False, color='r', kde_kws={'linewidth': 3}, label="Actual Value", )
+    plt.figure()
+    ax1 = sns.distplot(tree_df['y'], hist=False, color='r', kde_kws={'linestyle': 'dashed'}, label="Actual Value", )
 
     for x in trees:
-        sns.distplot(tree_df["(" + str(x) + ")trees"], hist=False, kde_kws={'linestyle': '-.'},
+        sns.distplot(tree_df["(" + str(x) + ")trees"], hist=False, kde_kws={'linestyle': ':'},
                      label="(" + str(x) + ") Trees")
-    sns.distplot(tree_df["(" + str(int(bst_tree[1])) + ")trees"], hist=False, color='b', kde_kws={'linewidth': 5},
+    sns.distplot(tree_df["(" + str(int(bst_tree[1])) + ")trees"], hist=False, color='b', kde_kws={'linewidth': 1},
                  label="(" + str(int(bst_tree[1])) + ") Trees")
     plt.xlabel("Predicted Mean RT")
     plt.ylabel("Normalized Range")
-    plt.title('Prediction accuracy between number of Trees')
-    plt.savefig("results/RFR_depth.png")
+    plt.title('Prediction Accuracy Vs Number of Trees')
+    plt.savefig("results/RFR_depth.png", bbox_inches = "tight")
+    plt.tight_layout()
     plt.show()
 
 

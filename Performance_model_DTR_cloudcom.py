@@ -3,7 +3,7 @@ import logging
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+from sklearn.metrics import mean_squared_error, r2_score, median_absolute_error, mean_absolute_error,mean_absolute_percentage_error
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
 
@@ -45,9 +45,14 @@ def get_N_samplesd_random(choice, structured_data):
 
 def get_N_samplesd_twise(choice, structured_data):
     N1_variants = [1, 41, 42, 44, 8, 11, 20, 39, 46, 33, 24, 31, 50, 38, 12, 17, 2]
-    N2_variants = [6, 54, 36, 55, 48, 14, 25, 16, 56, 32, 35, 52, 45, 13, 18, 51]
-    N3_variants = [3, 5, 7, 10, 15, 21, 23, 27, 28, 29, 37, 43, 47, 49, 53]
-    N4_variants = [22, 26, 30, 4, 8, 34, 9, 19]  # this should be prediction set (test)
+    N1_1variants = [1, 41, 42, 44, 8, 11, 20, 39, 46, 33, 24, 31, 50,38]
+    N2_variants = [6, 54, 36, 55, 48, 14, 25, 16, 56, 32, 35, 52, 45,12]
+    N3_variants = [3, 5, 7, 10, 15, 21, 23, 27, 28, 29, 37, 43, 47,17]
+    N4_variants = [22, 26, 30, 4, 8, 34, 9, 19, 13, 18, 51,49, 53,2]  # this should be prediction set (test)
+    # N1_variants = [1, 41, 42, 44, 8, 11, 20, 39, 46, 33, 24, 31, 50, 38, 12, 17, 2]
+    # N2_variants = [2, 6, 54, 8, 27, 36, 55, 48, 14, 25, 16, 56, 32, 35, 52, 45, 13, 18, 51]
+    # N3_variants = [3, 5, 7, 10, 15, 21, 23, 27, 28, 29, 37, 43, 47, 49, 53]
+    # N4_variants = [4, 8, 22, 30, 34]
 
     # DTR
     if choice == 'N1':
@@ -57,13 +62,13 @@ def get_N_samplesd_twise(choice, structured_data):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
 
     elif choice == 'N2':
-        N2 = structured_data[structured_data.variant.isin(N1_variants + N2_variants + N4_variants)]
+        N2 = structured_data[structured_data.variant.isin(N1_1variants + N2_variants + N4_variants)]
         X = N2.iloc[:, 1:15]
         y = N2.iloc[:, -1]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.75)
 
     elif choice == 'N3':
-        N3 = structured_data[structured_data.variant.isin(N1_variants + N2_variants + N3_variants + N4_variants)]
+        N3 = structured_data[structured_data.variant.isin(N1_1variants + N2_variants + N3_variants + N4_variants)]
         X = N3.iloc[:, 1:15]
         y = N3.iloc[:, -1]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.6)
@@ -99,6 +104,8 @@ def base_DTR(structured_data):
     # Score
     y_predicted = base_DTR.predict(X_test)
     print('R-Square: ', round(r2_score(y_test, y_predicted), 2))
+    print('MAPE: ', round(mean_absolute_percentage_error(y_test, y_predicted), 2))
+    print('MEAE: ', round( median_absolute_error (y_test, y_predicted), 2))
     print('MSE: ', round(mean_squared_error(y_test, y_predicted), 2))
     print('MAE: ', round(mean_absolute_error(y_test, y_predicted), 2))
     print('RMSE: ', round(mean_squared_error(y_test, y_predicted), 2))
@@ -147,6 +154,7 @@ def param_tuningDTR(structured_data):
 def trainsize_gridsearch(structured_data, best_params):
     scores = []
     mse = []
+    smape = []
     mae = []
     rmse = []
 
@@ -163,12 +171,13 @@ def trainsize_gridsearch(structured_data, best_params):
         # Score
         y_pred = mlregr_final.predict(X_test)
         scores.append(round(r2_score(y_test, y_pred), 2))
-        mse.append(round(mean_squared_error(y_test, y_pred), 2))
+        mse.append(round(mean_absolute_percentage_error_1(y_test, y_pred), 2))
         mae.append(round(mean_absolute_error(y_test, y_pred), 2))
         rmse.append(round(mean_squared_error(y_test, y_pred, squared=False), 2))
+        smape.append(round(smapefun(y_test, y_pred), 2))
 
-    size_score = pd.DataFrame(list(zip(sizes, scores, mse, mae, rmse)),
-                              columns=['N sample size', 'r2_score', 'MSE', 'MAE', 'RMSE'])
+    size_score = pd.DataFrame(list(zip(sizes, scores, mse, mae, rmse,smape)),
+                              columns=['N sample size', 'r2_score', 'MSE', 'MAE', 'RMSE', 'smape'])
 
     return size_score
 
@@ -188,6 +197,7 @@ def run():
     best_score = size_score.iloc[size_score['r2_score'].idxmax()]
     best_train_size = str(best_score[0])
     print(size_score)
+    print(best_train_size)
 
     X_train, y_train, X_test, y_test = get_N_samplesd_twise(best_train_size, structured_data)
     mlregr_final = DecisionTreeRegressor(criterion=str(best_params[0]), splitter=best_params[1],
@@ -200,23 +210,37 @@ def run():
     y_pred = mlregr_final.predict(X_test)
 
     print("R-squared score: ", round(r2_score(y_test, y_pred), 2))
-    print("MSE: ", round(mean_squared_error(y_test, y_pred), 2))
+    print("MAPE: ",mean_absolute_percentage_error_1(y_test, y_pred))
+    print("smape: ",smapefun(y_test, y_pred))
+    print("MDAE: ", round(median_absolute_error(y_test, y_pred), 2))
     print("MAE: ", round(mean_absolute_error(y_test, y_pred), 2))
     print("RMSE: ", round(mean_squared_error(y_test, y_pred, squared=False), 2))
 
-    plt.figure(figsize=(10, 6))
-    ax1 = sns.distplot(dept_df['y'], hist=False, color='r', kde_kws={'linewidth': 3}, label="Actual Value", )
+    plt.figure()
+    ax1 = sns.distplot(dept_df['y'], hist=False, color='r', kde_kws={'linestyle': 'dashed'}, label="Actual Value", )
 
     for x in depth:
-        sns.distplot(dept_df["depth(" + str(x) + ")"], hist=False, kde_kws={'linestyle': '-.'}, label="Depth " + str(x))
-    sns.distplot(dept_df["depth(" + str(int(best_params[2])) + ")"], hist=False, color='b', kde_kws={'linewidth': 5},
+        sns.distplot(dept_df["depth(" + str(x) + ")"], hist=False, kde_kws={'linestyle': ':'}, label="Depth " + str(x))
+    sns.distplot(dept_df["depth(" + str(int(best_params[2])) + ")"], hist=False, color='b', kde_kws={'linewidth': 1},
                  label="Chosen Depth " + str(int(best_params[2])))
     plt.xlabel("Predicted Mean RT")
     plt.ylabel("Normalized Range")
-    plt.title('Prediction accuracy between tree depth')
-    plt.savefig("results/DTR_depth.png")
+    plt.title('Prediction Accuracy Vs. Tree Depth')
+    plt.savefig("results/DTR_depth.png", bbox_inches = "tight")
+    plt.tight_layout()
     plt.show()
 
+
+import numpy as np
+
+def mean_absolute_percentage_error_1(y_true, y_pred):
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+
+def smapefun(A, F):
+    tmp = 2 * np.abs(F - A) / (np.abs(A) + np.abs(F))
+    len_ = np.count_nonzero(~np.isnan(tmp))
+    return 100 / len_ * np.nansum(tmp)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

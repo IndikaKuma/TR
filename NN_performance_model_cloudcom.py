@@ -41,9 +41,10 @@ def get_N_samplesn_random(choice, structured_data):
 
 def get_N_samplesn_twise(choice, structured_data):
     N1_variants = [1, 41, 42, 44, 8, 11, 20, 39, 46, 33, 24, 31, 50, 38, 12, 17, 2]
-    N2_variants = [6, 54, 36, 55, 48, 14, 25, 16, 56, 32, 35, 52, 45, 13, 18, 51]
-    N3_variants = [3, 5, 7, 10, 15, 21, 23, 27, 28, 29, 37, 43, 47, 49, 53]
-    N4_variants = [22, 26, 30, 4, 8, 34, 9, 19]  # this should be prediction set (test)
+    N1_1variants = [1, 41, 42, 44, 8, 11, 20, 39, 46, 33, 24, 31, 50, 38]
+    N2_variants = [6, 54, 36, 55, 48, 14, 25, 16, 56, 32, 35, 52, 45, 12]
+    N3_variants = [3, 5, 7, 10, 15, 21, 23, 27, 28, 29, 37, 43, 47, 17]
+    N4_variants = [22, 26, 30, 4, 8, 34, 9, 19, 13, 18, 51, 49, 53, 2]  # this should be prediction set (test)
 
     if choice == 'N1':
         N1 = structured_data[structured_data.variant.isin(N1_variants)]
@@ -52,13 +53,13 @@ def get_N_samplesn_twise(choice, structured_data):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
 
     elif choice == 'N2':
-        N2 = structured_data[structured_data.variant.isin(N1_variants + N2_variants)]
+        N2 = structured_data[structured_data.variant.isin(N1_1variants + N2_variants)]
         X = N2.iloc[:, 1:15]
         y = N2.iloc[:, -1]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
     #
     elif choice == 'N3':
-        N3 = structured_data[structured_data.variant.isin(N1_variants + N2_variants + N3_variants)]
+        N3 = structured_data[structured_data.variant.isin(N1_1variants + N2_variants + N3_variants)]
         X = N3.iloc[:, 1:15]
         y = N3.iloc[:, -1]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
@@ -101,7 +102,7 @@ def deep_layer_neurons(structured_data, sizes):
         neurons['y_test'] = N4_y.to_list()
         neuron_cnt = []
         r2_sco = []
-        all_units = [16, 32, 64, 128]
+        all_units = [16, 32, 64, 128, 256]
         mse = []
         mae = []
         rmse = []
@@ -197,18 +198,19 @@ def run():
 
     # In[62]:
 
-    plt.figure(figsize=(16, 10))
-    ax1 = sns.distplot(neurons['y_test'], hist=False, color='r', kde_kws={'linewidth': 5}, label="Actual Value", )
+    plt.figure()
+    ax1 = sns.distplot(neurons['y_test'], hist=False, color='r', kde_kws={'linestyle': 'dashed'}, label="Actual Value", )
 
     for x in all_units:
-        sns.distplot(neurons["(" + str(x) + ") neurons"], kde_kws={'linestyle': '--'}, hist=False,
+        sns.distplot(neurons["(" + str(x) + ") neurons"], kde_kws={'linestyle': ':'}, hist=False,
                      label="(" + str(x) + ") neurons")
-    sns.distplot(neurons["(" + str(units) + ") neurons"], hist=False, color='b', kde_kws={'linewidth': 3},
+    sns.distplot(neurons["(" + str(units) + ") neurons"], hist=False, color='b', kde_kws={'linewidth': 1},
                  label="Chosen Neurons " + str(units))
-    plt.xlabel("Predicted moving Mean RT")
+    plt.xlabel("Predicted Mean RT")
     plt.ylabel("Normalized Range")
-    plt.title('Prediction accuracy at each neuron density')
-    # plt.savefig("results/NN_accuracy_new.png")
+    plt.title('Prediction Accuracy Vs Neuron Density')
+    plt.savefig("results/NN_accuracy_new.png", bbox_inches = "tight")
+    plt.tight_layout()
     plt.show()
 
     # sizes = [0.1,0.2,0.3,0.4,0.5]
