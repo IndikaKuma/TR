@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.config["DEBUG"] = True
 
 
-lr = joblib.load("model.pkl")
+#lr = joblib.load("model.pkl")
 
 @app.route('/insurance', methods=['POST']) # path of the endpoint. Except only HTTP POST request
 def predict_str():
@@ -31,10 +31,10 @@ def predict_str():
     #     inout.get('region_southeast', False),
     #     inout.get('region_southwest', False)
     # ]
-    df = pd.DataFrame(inout, index=[0])
+    #df = pd.DataFrame(inout, index=[0])
 
-    result =  lr.predict(df)
-    return jsonify({'test': 'HEY!', 'result': result[0]})
+   # result =  lr.predict(df)
+    return jsonify({'test': 'HEY!', 'result': 'true'})
 
 
 
